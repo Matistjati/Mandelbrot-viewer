@@ -33,7 +33,7 @@ public:
 
 	void Print()
 	{
-		printf("%f %f %f\n", zoom, offsetX, offsetY);
+		printf("%.4f %.4f %.4f\n", zoom, offsetX, offsetY);
 	}
 };
 

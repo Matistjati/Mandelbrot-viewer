@@ -1,6 +1,7 @@
 #include <vector>
 #include "KeyFrame.h"
 #include <vector>
+#include "Mandelbrot.h"
 
 #pragma once
 #ifndef RENDERER_H
@@ -10,11 +11,14 @@ class Renderer
 {
 public:
 	void RecordFrame(KeyFrame frame);
-	void RenderFrames(int framesBetweenImages, int width, int height, int maxIterations);
+	void RecordFrame(KeyFrame* frame);
+	void RecordFrame(double zoom, double offsetX, double offsetY);
+	void RenderFrames(int framesBetweenImages, Mandelbrot mandel, std::string outputFolder);
 	
 	void Serialize(const char* fileName);
 	void Deserialize(std::string fileName);
 
+	int FrameCount();
 private:
 	std::vector<KeyFrame> keyFrames;
 };

@@ -3,6 +3,7 @@
 #include "Mandelbrot.h"
 #include "KeyFrame.h"
 #include "Renderer.h"
+#include <string>
 
 constexpr int maxIterationsRender = 8192;
 //constexpr int widthRender = 4096;
@@ -14,6 +15,7 @@ constexpr int maxIterationsExploration = 256;
 constexpr int widthExploration = 512;
 constexpr int heightExploration = 512;
 
+constexpr double movementSmoothing = 0.05;
 
 
 
@@ -21,44 +23,9 @@ constexpr int heightExploration = 512;
 int main()
 {
 	Renderer renderer;
-
-	KeyFrame frame;
-	frame.zoom = 1;
-	frame.offsetX = 2;
-	frame.offsetY = 3;
-	
-	renderer.RecordFrame(frame);
-
-	KeyFrame frame2;
-
-	frame2.zoom = 4;
-	frame2.offsetX = 5;
-	frame2.offsetY = 6;
-
-	renderer.RecordFrame(frame2);
-
-	KeyFrame frame3;
-	frame3.zoom = 7;
-	frame3.offsetX = 8;
-	frame3.offsetY = 9;
-	renderer.RecordFrame(frame3);
-
-
-	frame.zoom = 6;
-	frame.offsetX = 125;
-	frame.offsetY = 69;
-
-	renderer.Serialize("bb");
-
-	Renderer renderer2;
-
-	renderer2.Deserialize("bb");
-
-
-	//KeyFrame ver;
-	//ver.Deserialize("bb");
-	//ver.Print();
-	return 0;
+	double lastRecordedZoom = -1;
+	double lastRecordedoffsetX = - 1;
+	double lastRecordedoffsetY = - 1;
 
 
 	double speed = 0.5;
@@ -114,7 +81,42 @@ int main()
 					renderBrot.UpdateImage(zoom, offsetX, offsetY, renderImage);
 
 					renderImage.saveToFile("out.png");
-					printf("Saved image of size %i * %i, %i iterations in %.4f seconds", widthRender, heightRender, maxIterationsRender, renderTime.getElapsedTime().asSeconds());
+					printf("Saved image of size %i * %i, %i iterations in %.4f seconds\n", widthRender, heightRender, maxIterationsRender, renderTime.getElapsedTime().asSeconds());
+				}
+
+				if (event.key.code == sf::Keyboard::R
+					&& event.key.control && lastRecordedZoom != zoom && lastRecordedoffsetX != offsetX && lastRecordedoffsetY != offsetY)
+				{
+					renderer.RecordFrame(zoom, offsetX, offsetY);
+					printf("recorded frame. zoom %.15f, x %.4f, y %.4f\n", zoom, offsetX, offsetY);
+				}
+
+				if (event.key.code == sf::Keyboard::E
+					&& event.key.control)
+				{
+					std::string end = std::to_string((rand() % 10000));
+					std::string fileName = "keyframe" + end;
+
+					renderer.Serialize(fileName.c_str());
+					printf("saved current keyframes in file keyframes%s\n", fileName);
+				}
+
+				if (event.key.code == sf::Keyboard::O
+					&& event.key.control)
+				{
+					const std::string output = "C:\\Users\\Matis\\Desktop\\Mandelbrot\\Movie\\1";
+					const int framesPerImage = 120;
+
+					renderTime.restart();
+
+					renderer.RenderFrames(framesPerImage, renderBrot, output);
+					std::cout << "Saved " << framesPerImage * (renderer.FrameCount() - 1) << " images to folder " << output << " in " << renderTime.getElapsedTime().asSeconds() << " seconds\n";
+				}
+
+				if (event.key.code == sf::Keyboard::B
+					&& event.key.control)
+				{
+					printf("");
 				}
 
 			case sf::Event::TextEntered:
@@ -143,11 +145,15 @@ int main()
 				case 'q':
 					stateChanged = true;
 					zoom *= 0.9;
+					offsetX += zoom * movementSmoothing;
+					offsetY += zoom * movementSmoothing;
 					break;
 
 				case 'e':
 					stateChanged = true;
 					zoom /= 0.9;
+					offsetX -= zoom * movementSmoothing;
+					offsetY -= zoom * movementSmoothing;
 					break;
 
 				case 'z':

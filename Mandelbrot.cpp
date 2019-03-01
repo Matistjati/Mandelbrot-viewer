@@ -36,7 +36,7 @@ int Mandelbrot::MandelIterate(double px, double py, int maxIterations)
 		}
 
 		y = 2 * x * y + py;
-		x = x2 - y2 + px;
+		x = x2 - y2 + px; // TODO This is slow, maybe x2 and y2 get moved out of the registers?
 
 
 	}
@@ -114,16 +114,14 @@ void Mandelbrot::UpdateImageSlice(double zoom, double offsetX, double offsetY, s
 	}*/
 
 
-	double screenScaleX = 1 / static_cast<float>(width)  * zoom;
-	double screenScaleY = 1 / static_cast<float>(height)  * zoom;
-	//printf("scale: %f", screenScaleX);
-	for (int x = 0; x < width; x++)
+	double screenScaleX = (1 / static_cast<float>(width)  * zoom);
+	double screenScaleY = (1 / static_cast<float>(height)  * zoom);
+
+	for (int x = 0; x < width; x++, offsetX += screenScaleX)
 	{
 		for (int y = minY; y < maxY; y++)
 		{
-			int iterations = MandelIterate(offsetX + (x * screenScaleX),
-				offsetY + (y * screenScaleY),
-				maxIterations);
+			int iterations = MandelIterate(offsetX, offsetY + y * screenScaleY, maxIterations);
 
 			/*
 			if (x % 50 == 0)

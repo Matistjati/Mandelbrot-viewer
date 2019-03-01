@@ -2,6 +2,7 @@
 #include "KeyFrame.h"
 #include <iostream>
 #include "Mandelbrot.h"
+#include <cmath>
 
 void Renderer::RecordFrame(KeyFrame frame)
 {
@@ -26,10 +27,16 @@ void Renderer::RecordFrame(double zoom, double offsetX, double offsetY)
 	keyFrames.push_back(frame);
 }
 
-double lerp(double value1, double value2, double amount)
+double lerp(double min, double max, double amount)
 {
-	return (1 - amount) * value1 + amount * value2;
+	return (1 - amount) * min + amount * max;
 }
+
+double PercentBetween(double start, double end, double value)
+{
+	return (value - start) / (end - start);
+}
+
 
 void Renderer::RenderFrames(int framesBetweenImages, Mandelbrot mandel, std::string outputFolder)
 {
@@ -45,14 +52,49 @@ void Renderer::RenderFrames(int framesBetweenImages, Mandelbrot mandel, std::str
 
 	for (int i = 1; i < keyFrames.size(); i++)
 	{
-		for (size_t j = 0; j < framesBetweenImages; j++)
+		std::cout << "lerping between " << keyFrames[i - 1].zoom << " and " << keyFrames[i].zoom;
+
+		double zoom = keyFrames[i - 1].zoom;
+		double zoomChange = std::pow((keyFrames[i].zoom / keyFrames[i - 1].zoom), 1.f / (framesBetweenImages - 1));
+
+		double offsetX = keyFrames[i - 1].offsetX;
+		//double offsetXChange = std::pow((keyFrames[i].offsetX / keyFrames[i - 1].offsetX), 1.f / (framesBetweenImages - 1));
+		//double offsetXChange = ((keyFrames[i - 1].offsetX - keyFrames[i].offsetX) / (framesBetweenImages - 1));
+
+
+		double offsetY = keyFrames[i - 1].offsetY;
+		//double offsetYChange = std::pow((keyFrames[i].offsetY / keyFrames[i - 1].offsetY), 1.f / (framesBetweenImages - 1));
+		//double offsetYChange = ((keyFrames[i - 1].offsetY - keyFrames[i].offsetY) / (framesBetweenImages - 1));
+
+
+
+
+
+
+
+
+		double amount = 0;
+		for (int j = 0; j < framesBetweenImages; j++, zoom *= zoomChange)
 		{
-			double zoom = lerp(keyFrames[i - 1].zoom, keyFrames[i].zoom, j / (float)framesBetweenImages);
-			double offsetX = lerp(keyFrames[i - 1].offsetX, keyFrames[i].offsetX, j / (float)framesBetweenImages);
-			double offsetY = lerp(keyFrames[i - 1].offsetY, keyFrames[i].offsetY, j / (float)framesBetweenImages);
+			// How many percent zoom is between start and end
+			double amount = PercentBetween(keyFrames[i].zoom, keyFrames[i - 1].zoom, zoom);
+
+			double offsetX = lerp(keyFrames[i].offsetX, keyFrames[i - 1].offsetX, amount);
+			double offsetY = lerp(keyFrames[i].offsetY, keyFrames[i - 1].offsetY, amount);
+
+
+
 
 			mandel.UpdateImage(zoom, offsetX, offsetY, outPutImage);
-			//std::cout << "zoom: " << zoom << ", x: " << offsetX << ", y: " << offsetY;
+
+
+
+
+			//std::cout << "% between start and finish: " << amount * 100 << "%\n";
+			// I FINALLY GOT IT, turns out that my hunch about getting a constant relative difference was correct
+			//std::cout << "zoom: " << zoom << ", relative difference: " << (lastZoom - zoom) / zoom << "\n";
+
+
 
 
 			std::string file = (outputFolder + "\\mandel" + std::to_string(currentFile) + ".png");

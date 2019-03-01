@@ -104,7 +104,7 @@ int main()
 				if (event.key.code == sf::Keyboard::O
 					&& event.key.control)
 				{
-					const std::string output = "C:\\Users\\Matis\\Desktop\\Mandelbrot\\Movie\\1";
+					const std::string output = "C:\\Users\\Matis\\Desktop\\Mandelbrot\\Movie\\5";
 					const int framesPerImage = 120;
 
 					renderTime.restart();

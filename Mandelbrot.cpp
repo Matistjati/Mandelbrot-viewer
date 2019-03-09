@@ -41,6 +41,23 @@ int Mandelbrot::MandelIterate(double px, double py, int maxIterations)
 
 	}
 
+	/*int i = maxIterations;
+	for (; i > 0; i--)
+	{
+		y2 = y * y;
+		x2 = x * x;
+
+		if (x2 + y2 > 4)
+		{
+			break;
+		}
+
+		y = 2 * x * y + py;
+		x = x2 - y2 + px; // TODO This is slow, maybe x2 and y2 get moved out of the registers?
+
+
+	}*/
+
 	return maxIterations - i;
 }
 
@@ -49,8 +66,8 @@ sf::Color Mandelbrot::GetColor(int iterations)
 {
 	const double iterationLog = log(this->maxIterations - 1.0);
 
-	/*
-	if (iterations > maxIterations)
+	
+	if (iterations + 1 > maxIterations)
 	{
 		return sf::Color::Black;
 	}
@@ -71,8 +88,30 @@ sf::Color Mandelbrot::GetColor(int iterations)
 			return sf::Color(255, 255, static_cast<sf::Uint8>(255 * (c - 2)));
 		}
 	}
-	*/
 
+	/*if (iterations > maxIterations)
+	{
+		return sf::Color::Black;
+	}
+	else
+	{
+		double c = 3 * log(iterations) / iterationLog;
+
+		if (c < 1)
+		{
+			return sf::Color(static_cast<sf::Uint8>(255 * c), 0, 0);
+		}
+		else if (c < 2)
+		{
+			return sf::Color(255, static_cast<sf::Uint8>(255 * (c - 1)), 0);
+		}
+		else
+		{
+			return sf::Color(255, 255, static_cast<sf::Uint8>(255 * (c - 2)));
+		}
+	}*/
+	
+	/*
 	if (iterations + 2 > maxIterations)
 	{
 		return sf::Color::Black;
@@ -83,17 +122,17 @@ sf::Color Mandelbrot::GetColor(int iterations)
 
 		if (c < 1)
 		{
-			return sf::Color(static_cast<sf::Uint8>(255 * c), 0, 0);
+			return sf::Color(0, static_cast<sf::Uint8>(255 * c), 0);
 		}
 		else if (c < 2)
 		{
-			return sf::Color(255, static_cast<sf::Uint8>(255 * (c - 1)), 0);
+			return sf::Color(0, static_cast<sf::Uint8>(255 * (c - 0)), 0);
 		}
 		else
 		{
-			return sf::Color(255, 255, static_cast<sf::Uint8>(255 * (c - 2)));
+			return sf::Color(0, static_cast<sf::Uint8>(255 * (c - 1)), 0);
 		}
-	}
+	}*/
 }
 
 

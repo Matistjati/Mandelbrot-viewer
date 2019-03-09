@@ -5,7 +5,7 @@
 #include "Renderer.h"
 #include <string>
 
-constexpr int maxIterationsRender = 8192;
+constexpr int maxIterationsRender = 256;
 //constexpr int widthRender = 4096;
 //constexpr int heightRender = 2160;
 constexpr int widthRender = 1920;
@@ -28,7 +28,7 @@ int main()
 	double lastRecordedoffsetY = - 1;
 
 
-	double speed = 0.5;
+	double speed = 0.05;
 	double offsetX = -0.7;
 	double offsetY = 0;
 	double zoom = 0.4;
@@ -98,19 +98,19 @@ int main()
 					std::string fileName = "keyframe" + end;
 
 					renderer.Serialize(fileName.c_str());
-					printf("saved current keyframes in file keyframes%s\n", fileName);
+					std::cout << "saved current keyframes in file " << fileName << "\n";
 				}
 
 				if (event.key.code == sf::Keyboard::O
 					&& event.key.control)
 				{
-					const std::string output = "C:\\Users\\Matis\\Desktop\\Mandelbrot\\Movie\\5";
-					const int framesPerImage = 120;
+					const std::string output = "C:\\Users\\Matis\\Desktop\\Mandelbrot\\Movie\\8";
+					const int minImagesPerFrames = 120;
 
 					renderTime.restart();
 
-					renderer.RenderFrames(framesPerImage, renderBrot, output);
-					std::cout << "Saved " << framesPerImage * (renderer.FrameCount() - 1) << " images to folder " << output << " in " << renderTime.getElapsedTime().asSeconds() << " seconds\n";
+					renderer.RenderFramesAdaptive(minImagesPerFrames, renderBrot, output);
+					std::cout << "Saved " << minImagesPerFrames * (renderer.FrameCount() - 1) << " images to folder " << output << " in " << renderTime.getElapsedTime().asSeconds() << " seconds\n";
 				}
 
 				if (event.key.code == sf::Keyboard::B
@@ -197,10 +197,11 @@ int main()
 
 
 
+
 		float currentTime = clock.restart().asSeconds();
 		int fps = (int)(1.f / (currentTime));
 
-		window.setTitle("Mandelbrot set " + std::to_string(fps) + " fps");
+		window.setTitle("Mandelbrot set " + std::to_string(fps) + " fps, zoom: " + std::to_string(zoom));
 	}
 
 	return 0;

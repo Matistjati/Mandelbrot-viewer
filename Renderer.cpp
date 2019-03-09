@@ -27,22 +27,22 @@ void Renderer::RecordFrame(double zoom, double offsetX, double offsetY)
 	keyFrames.push_back(frame);
 }
 
-double lerp(double min, double max, double amount)
+inline double lerp(double min, double max, double amount)
 {
 	return (1 - amount) * min + amount * max;
 }
 
-double PercentBetween(double start, double end, double value)
+inline double PercentBetween(double start, double end, double value)
 {
 	return (value - start) / (end - start);
 }
 
 
-void Renderer::RenderFrames(int framesBetweenImages, Mandelbrot mandel, std::string outputFolder)
+double Renderer::RenderFrames(int framesBetweenImages, Mandelbrot mandel, std::string outputFolder)
 {
 	if (keyFrames.size() < 2)
 	{
-		return;
+		return -1;
 	}
 
 	int totalFileCount = (this->FrameCount() - 1) * framesBetweenImages;
@@ -50,44 +50,33 @@ void Renderer::RenderFrames(int framesBetweenImages, Mandelbrot mandel, std::str
 	sf::Image outPutImage;
 	outPutImage.create(mandel.width, mandel.height, sf::Color::Green);
 
-	for (int i = 1; i < keyFrames.size(); i++)
+	sf::Clock renderTime;
+	double totalTime = 0;
+
+	std::cout << "saving " << totalFileCount << " files to folder " << outputFolder;
+
+	for (size_t i = 1; i < keyFrames.size(); i++)
 	{
-		std::cout << "lerping between " << keyFrames[i - 1].zoom << " and " << keyFrames[i].zoom;
+		//std::cout << "lerping between " << keyFrames[i - 1].zoom << " and " << keyFrames[i].zoom;
+
+		std::cout << "At keyframe " << i << "/" << FrameCount() - 1 << "\n";
 
 		double zoom = keyFrames[i - 1].zoom;
 		double zoomChange = std::pow((keyFrames[i].zoom / keyFrames[i - 1].zoom), 1.f / (framesBetweenImages - 1));
 
 		double offsetX = keyFrames[i - 1].offsetX;
-		//double offsetXChange = std::pow((keyFrames[i].offsetX / keyFrames[i - 1].offsetX), 1.f / (framesBetweenImages - 1));
-		//double offsetXChange = ((keyFrames[i - 1].offsetX - keyFrames[i].offsetX) / (framesBetweenImages - 1));
-
-
 		double offsetY = keyFrames[i - 1].offsetY;
-		//double offsetYChange = std::pow((keyFrames[i].offsetY / keyFrames[i - 1].offsetY), 1.f / (framesBetweenImages - 1));
-		//double offsetYChange = ((keyFrames[i - 1].offsetY - keyFrames[i].offsetY) / (framesBetweenImages - 1));
-
-
-
-
-
-
-
-
 		double amount = 0;
-		for (int j = 0; j < framesBetweenImages; j++, zoom *= zoomChange)
+
+		for (int j = 0; j < framesBetweenImages; j++, zoom *= zoomChange, currentFile++)
 		{
 			// How many percent zoom is between start and end
-			double amount = PercentBetween(keyFrames[i].zoom, keyFrames[i - 1].zoom, zoom);
+			amount = PercentBetween(keyFrames[i].zoom, keyFrames[i - 1].zoom, zoom);
 
 			double offsetX = lerp(keyFrames[i].offsetX, keyFrames[i - 1].offsetX, amount);
 			double offsetY = lerp(keyFrames[i].offsetY, keyFrames[i - 1].offsetY, amount);
 
-
-
-
 			mandel.UpdateImage(zoom, offsetX, offsetY, outPutImage);
-
-
 
 
 			//std::cout << "% between start and finish: " << amount * 100 << "%\n";
@@ -95,15 +84,90 @@ void Renderer::RenderFrames(int framesBetweenImages, Mandelbrot mandel, std::str
 			//std::cout << "zoom: " << zoom << ", relative difference: " << (lastZoom - zoom) / zoom << "\n";
 
 
+			std::string file = (outputFolder + "\\mandel" + std::to_string(currentFile) + ".png");
 
+			outPutImage.saveToFile(outputFolder + "\\mandel" + std::to_string(currentFile) + ".png");
+			std::cout << "Saving file " << ("mandel" + std::to_string(currentFile) + ".png") <<", " <<
+				currentFile << "/" << totalFileCount <<
+				", took " << renderTime.restart().asSeconds() << "seconds\n";
+		}
+	}
+	return totalTime / totalFileCount;
+}
+
+int Renderer::GetFrameCount(int minFrames, double start, double end, double referenceAmount)
+{
+	return (int)std::ceil(minFrames * ((start / end) / referenceAmount));
+}
+
+double Renderer::RenderFramesAdaptive(int minFramesBetweenImages, Mandelbrot mandel, std::string outputFolder)
+{
+	if (keyFrames.size() < 2)
+	{
+		return -1;
+	}
+	
+	// The average
+	double referenceAmount = 0;
+	for (size_t i = 1; i < keyFrames.size(); i++)
+	{
+		referenceAmount += keyFrames[i - 1].zoom / keyFrames[i].zoom;
+	}
+	referenceAmount /= keyFrames.size();
+
+	std::vector<int> frameAmounts(keyFrames.size());
+	int totalFileCount = 0;
+
+	for (size_t i = 1; i < keyFrames.size(); i++)
+	{
+		int frameAmount = GetFrameCount(minFramesBetweenImages, keyFrames[i - 1].zoom, keyFrames[i].zoom, referenceAmount);
+		totalFileCount += frameAmount;
+		frameAmounts[i - 1] = frameAmount;
+	}
+
+
+	int currentFile = 1;
+	sf::Image outPutImage;
+	outPutImage.create(mandel.width, mandel.height, sf::Color::Green);
+
+	sf::Clock renderTime;
+	double totalTime = 0;
+
+
+	std::cout << "saving " << totalFileCount << " files to folder " << outputFolder << "\n";
+
+	for (size_t i = 1; i < keyFrames.size(); i++)
+	{
+		int currentImageBetweenFrame = frameAmounts[i - 1];
+		std::cout << "At keyframe " << i << "/" << FrameCount() - 1 << ", " << currentImageBetweenFrame << " images for this frame\n";
+		
+		double zoom = keyFrames[i - 1].zoom;
+		double zoomChange = std::pow((keyFrames[i].zoom / keyFrames[i - 1].zoom), 1.f / (currentImageBetweenFrame - 1));
+
+		double offsetX = keyFrames[i - 1].offsetX;
+		double offsetY = keyFrames[i - 1].offsetY;
+		double amount = 0;
+
+		for (int _ = 0; _ < currentImageBetweenFrame; _++, zoom *= zoomChange, currentFile++)
+		{
+			// How many percent zoom is between start and end
+			amount = PercentBetween(keyFrames[i].zoom, keyFrames[i - 1].zoom, zoom);
+
+			double offsetX = lerp(keyFrames[i].offsetX, keyFrames[i - 1].offsetX, amount);
+			double offsetY = lerp(keyFrames[i].offsetY, keyFrames[i - 1].offsetY, amount);
+
+			mandel.UpdateImage(zoom, offsetX, offsetY, outPutImage);
 
 			std::string file = (outputFolder + "\\mandel" + std::to_string(currentFile) + ".png");
 
-			std::cout << "saving file " << file << ", " << currentFile << "/" << totalFileCount << "\n";
 			outPutImage.saveToFile(outputFolder + "\\mandel" + std::to_string(currentFile) + ".png");
-			currentFile++;
+
+			std::cout << "Saving file " << ("mandel" + std::to_string(currentFile) + ".png") << ", " <<
+				currentFile << "/" << totalFileCount <<
+				", took " << renderTime.restart().asSeconds() << "seconds\n";
 		}
 	}
+	return totalTime / totalFileCount;
 }
 
 void Renderer::Serialize(const char * fileName)
